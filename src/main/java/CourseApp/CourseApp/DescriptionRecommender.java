@@ -9,6 +9,6 @@ public class DescriptionRecommender implements CourseRecommender{
 
     @Override
     public List<Course> recommendCourses() {
-        return List.of(new Course("Spring","A spring Course",4.5,500));
+        return List.of(new Course(1,"Spring","A spring Course",new Rating()));
     }
 }

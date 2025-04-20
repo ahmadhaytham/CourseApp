@@ -9,6 +9,6 @@ import java.util.List;
 public class RatingsRecommender implements CourseRecommender{
     @Override
     public List<Course> recommendCourses() {
-        return List.of(new Course("Angular","An Angular Course",4.7,350));
+        return List.of(new Course(1,"Angular","An Angular Course",4.7,350));
     }
 }
