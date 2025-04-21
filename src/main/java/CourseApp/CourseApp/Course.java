@@ -31,6 +31,12 @@ public class Course {
         this.rating = rating;
 
     }
+    public Author getAuthor() {
+        return author;
+    }
+    public void setAuthor(Author author) {
+        this.author = author;
+    }
 
     public String getName() {
         return name;

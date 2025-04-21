@@ -37,8 +37,9 @@ public class CourseService {
     }
 
     public CourseDto getCourseById(Long id) {
-        return courseMapper.toDto(courseRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Course not found")));
+        Course course = courseRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Course not found with id: " + id));
+        return courseMapper.toDto(course);
     }
 
     public CourseDto createCourse(CourseDto dto) {
