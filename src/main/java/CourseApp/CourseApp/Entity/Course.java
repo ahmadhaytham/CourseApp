@@ -1,12 +1,14 @@
-package CourseApp.CourseApp;
+package CourseApp.CourseApp.Entity;
 
 import jakarta.persistence.*;
+
+import java.util.List;
 
 @Entity
 public class Course {
     @Id
     @GeneratedValue
-    private int id;
+    private Long id;
     private String name;
     private String description;
     private int credit;
@@ -15,21 +17,35 @@ public class Course {
     @JoinColumn(name = "author_id")
     private Author author;
 
-    @OneToOne(mappedBy = "course", cascade = CascadeType.ALL)
-    private Rating rating;
+    @OneToMany(mappedBy = "course", cascade = CascadeType.ALL)
+    private List<Rating> ratings;
 
-    @OneToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "assessment_id", referencedColumnName = "id")
+    @OneToOne(mappedBy = "course", cascade = CascadeType.ALL)
+    @PrimaryKeyJoinColumn
     private Assessment assessment;
+
+    public List<Rating> getRatings() {
+        return ratings;
+    }
+
+    public void setRatings(List<Rating> ratings) {
+        this.ratings = ratings;
+    }
+
+    public Assessment getAssessment() {
+        return assessment;
+    }
+
+    public void setAssessment(Assessment assessment) {
+        this.assessment = assessment;
+    }
 
     public Course() {}
 
-    public Course(int id,String name, String description, Rating rating) {
+    public Course(Long id,String name, String description) {
         this.id = id;
         this.name = name;
         this.description = description;
-        this.rating = rating;
-
     }
     public Author getAuthor() {
         return author;
@@ -54,9 +70,7 @@ public class Course {
         this.description = description;
     }
 
-    public Rating getRating() {
-        return rating;
-    }
+
 
 
 
@@ -68,11 +82,11 @@ public class Course {
         this.credit = price;
     }
 
-    public int getId() {
+    public Long getId() {
         return id;
     }
 
-    public void setId(int id) {
+    public void setId(Long id) {
         this.id = id;
     }
 }

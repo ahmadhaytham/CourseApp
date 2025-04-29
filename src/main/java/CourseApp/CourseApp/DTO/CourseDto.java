@@ -1,13 +1,19 @@
-package CourseApp.CourseApp;
+package CourseApp.CourseApp.DTO;
 
 public class CourseDto {
     private Long id;
     private String name;
     private String description;
     private int credit;
-    private Long authorId;
-    private Long ratingId;
-    private Long assessmentId;
+    private AuthorDto author;
+
+    public AuthorDto getAuthor() {
+        return author;
+    }
+
+    public void setAuthor(AuthorDto author) {
+        this.author = author;
+    }
 
     // Constructors
     public CourseDto() {}
@@ -45,27 +51,5 @@ public class CourseDto {
         this.credit = credit;
     }
 
-    public Long getAuthorId() {
-        return authorId;
-    }
 
-    public void setAuthorId(Long authorId) {
-        this.authorId = authorId;
-    }
-
-    public Long getRatingId() {
-        return ratingId;
-    }
-
-    public void setRatingId(Long ratingId) {
-        this.ratingId = ratingId;
-    }
-
-    public Long getAssessmentId() {
-        return assessmentId;
-    }
-
-    public void setAssessmentId(Long assessmentId) {
-        this.assessmentId = assessmentId;
-    }
 }

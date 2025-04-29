@@ -1,5 +1,7 @@
-package CourseApp.CourseApp;
+package CourseApp.CourseApp.Mapper;
 
+import CourseApp.CourseApp.DTO.AssessmentDto;
+import CourseApp.CourseApp.Entity.Assessment;
 import org.mapstruct.Mapper;
 
 @Mapper(componentModel = "spring")

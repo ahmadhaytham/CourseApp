@@ -1,5 +1,8 @@
-package CourseApp.CourseApp;
+package CourseApp.CourseApp.Controller;
 
+import CourseApp.CourseApp.DTO.AuthorDto;
+import CourseApp.CourseApp.Mapper.AuthorMapper;
+import CourseApp.CourseApp.Repository.AuthorRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;

@@ -1,8 +1,11 @@
-package CourseApp.CourseApp;
+package CourseApp.CourseApp.Controller;
 
-import io.swagger.v3.oas.annotations.Operation;
+import CourseApp.CourseApp.DTO.CourseDto;
+import CourseApp.CourseApp.Service.CourseService;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.http.HttpStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,6 +17,15 @@ public class CourseController {
 
     public CourseController(CourseService courseService) {
         this.courseService = courseService;
+    }
+
+    @GetMapping
+    public ResponseEntity<Page<CourseDto>> getAllCourses(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<CourseDto> courses = courseService.getAllCourses(pageable);
+        return ResponseEntity.ok(courses);
     }
 
     @GetMapping("/{id}")

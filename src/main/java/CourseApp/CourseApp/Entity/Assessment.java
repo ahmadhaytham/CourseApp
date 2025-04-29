@@ -1,0 +1,39 @@
+package CourseApp.CourseApp.Entity;
+
+import jakarta.persistence.*;
+
+@Entity
+public class Assessment {
+    @Id
+    @GeneratedValue
+    private Long id;
+    private String content;
+    @OneToOne
+    @MapsId // Indicates that the primary key is mapped from the associated entity's primary key
+    @JoinColumn(name = "id") // Foreign key column in Assessment table, same as primary key
+    private Course course;
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public Course getCourse() {
+        return course;
+    }
+
+    public void setCourse(Course course) {
+        this.course = course;
+    }
+
+    public String getContent() {
+        return content;
+    }
+
+    public void setContent(String content) {
+        this.content = content;
+    }
+}
