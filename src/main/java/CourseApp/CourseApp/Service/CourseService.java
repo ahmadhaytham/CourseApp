@@ -77,12 +77,12 @@ public class CourseService {
         return courseMapper.toDto(courseRepository.save(course));
     }
 
-    public boolean deleteCourse(Long id) {
+    public void deleteCourse(Long id) {
         if (courseRepository.existsById(id)) {
             courseRepository.deleteById(id);
-            return true;
+
         } else {
-            return false;
+            return;
         }
     }
     public Optional<AuthorDto> getAuthorByEmail(String email) {

@@ -19,7 +19,7 @@ public class CourseController {
         this.courseService = courseService;
     }
 
-    @GetMapping
+    @GetMapping("/courses")
     public ResponseEntity<Page<CourseDto>> getAllCourses(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
@@ -28,53 +28,24 @@ public class CourseController {
         return ResponseEntity.ok(courses);
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/course-id/{id}")
     public CourseDto getCourse(@PathVariable Long id) {
         return courseService.getCourseById(id);
     }
 
-    @PostMapping
+    @PostMapping("/createCourse")
     public CourseDto createCourse(@RequestBody CourseDto dto) {
         return courseService.createCourse(dto);
     }
 
-    @PutMapping("/{id}")
+    @PutMapping("/updateCourse/{id}")
     public CourseDto updateCourse(@PathVariable Long id, @RequestBody CourseDto dto) {
         return courseService.updateCourse(id, dto);
     }
 
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/delete/{id}")
     public void deleteCourse(@PathVariable Long id) {
         courseService.deleteCourse(id);
     }
 
-//    @Operation(summary = "View a course by ID")
-//    @GetMapping("/{id}")
-//    public ResponseEntity<Course> viewCourse(@PathVariable int id) {
-//        Course course = courseService.getCourse(id);
-//        return course != null ? ResponseEntity.ok(course) : ResponseEntity.notFound().build();
-//    }
-//
-//    @Operation(summary = "Add a new course")
-//    @PostMapping
-//    public ResponseEntity<Course> addCourse(@RequestBody Course course) {
-//        if(course==null){
-//            return new ResponseEntity(HttpStatus.BAD_REQUEST);
-//        }
-//        Course added = courseService.addCourse(course);
-//        return ResponseEntity.status(HttpStatus.CREATED).body(added);
-//    }
-//
-//    @Operation(summary = "Update a course by ID")
-//    @PutMapping("/{id}")
-//    public ResponseEntity<Course> updateCourse(@RequestBody Course course) {
-//        Course updated = courseService.updateCourse(course);
-//        return updated != null ? ResponseEntity.ok(updated) : ResponseEntity.notFound().build();
-//    }
-//
-//    @Operation(summary = "Delete a course by ID")
-//    @DeleteMapping("/{id}")
-//    public ResponseEntity<Void> deleteCourse(@PathVariable int id) {
-//        return courseService.deleteCourse(id) ? ResponseEntity.noContent().build() : ResponseEntity.notFound().build();
-//    }
 }

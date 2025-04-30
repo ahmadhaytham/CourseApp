@@ -9,8 +9,8 @@ public class Assessment {
     private Long id;
     private String content;
     @OneToOne
-    @MapsId // Indicates that the primary key is mapped from the associated entity's primary key
-    @JoinColumn(name = "id") // Foreign key column in Assessment table, same as primary key
+    @MapsId
+    @JoinColumn(name = "id")
     private Course course;
 
     public Long getId() {

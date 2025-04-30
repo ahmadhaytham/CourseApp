@@ -1,30 +1,43 @@
 package CourseApp.CourseApp.Controller;
 
 import CourseApp.CourseApp.DTO.AuthorDto;
+import CourseApp.CourseApp.Entity.Author;
 import CourseApp.CourseApp.Mapper.AuthorMapper;
 import CourseApp.CourseApp.Repository.AuthorRepository;
+import CourseApp.CourseApp.Service.AuthorService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
-@RequestMapping("/authors")
+@RequestMapping("/api/authors")
 public class AuthorController {
-    private final AuthorRepository authorRepository;
-    private final AuthorMapper authorMapper;
+    private final AuthorService authorService; // Inject the concrete Service
 
-    public AuthorController(AuthorRepository authorRepository, AuthorMapper authorMapper) {
-        this.authorRepository = authorRepository;
-        this.authorMapper = authorMapper;
+    @Autowired
+    public AuthorController(AuthorService authorService) {
+        this.authorService = authorService;
+    }
+
+    @PostMapping("/createAuthor")
+    @ResponseStatus(HttpStatus.CREATED) // Use @ResponseStatus for 201 Created
+    public AuthorDto createAuthor(@RequestBody AuthorDto dto) {
+
+        return authorService.createAuthor(dto);
+    }
+
+    @GetMapping("/authors")
+    public List<AuthorDto> getAllAuthors() {
+        return authorService.getAllAuthors();
     }
 
     @GetMapping("/search")
     public ResponseEntity<AuthorDto> getAuthorByEmail(@RequestParam String email) {
-        return authorRepository.findByEmail(email)
-                .map(authorMapper::toDto)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+
+        AuthorDto authorDto = authorService.getAuthorByEmail(email);
+        return ResponseEntity.ok(authorDto);
     }
 }

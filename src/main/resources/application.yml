@@ -1,8 +1,14 @@
-spring.datasource.url=jdbc:mysql://localhost:3306/courses_db?createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=Europe/Istanbul
-spring.datasource.username=root
-spring.datasource.password=your_root_password
-spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
-spring.jpa.database-platform=org.hibernate.dialect.MySQLDialect
-spring.jpa.hibernate.ddl-auto=update
-spring.jpa.show-sql=true
-spring.jpa.properties.hibernate.format_sql=true
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/course_app?createDatabaseIfNotExist=true
+    username: root
+    password: M3lesh_672001
+    driver-class-name: com.mysql.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    database: mysql
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
