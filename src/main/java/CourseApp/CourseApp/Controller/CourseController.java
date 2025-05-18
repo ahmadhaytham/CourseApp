@@ -3,6 +3,7 @@ package CourseApp.CourseApp.Controller;
 import CourseApp.CourseApp.DTO.CourseDto;
 import CourseApp.CourseApp.Service.CourseService;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -17,6 +18,11 @@ public class CourseController {
 
     public CourseController(CourseService courseService) {
         this.courseService = courseService;
+    }
+
+    @GetMapping("/hello")
+    public String home(HttpServletRequest request) {
+        return "Welcome to the Course Application! "+request.getSession().getId();
     }
 
     @GetMapping("/courses")

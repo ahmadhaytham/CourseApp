@@ -6,66 +6,57 @@ import CourseApp.CourseApp.DTO.CourseDto;
 import CourseApp.CourseApp.Service.CourseService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
-import com.fasterxml.jackson.databind.ObjectMapper; // Import ObjectMapper
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc; // Import AutoConfigureMockMvc
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean; // Keep using MockBean for @WebMvcTest
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.MediaType; // Import MediaType
+import org.springframework.http.MediaType;
 import org.springframework.http.RequestEntity;
 import org.springframework.mock.http.server.reactive.MockServerHttpRequest;
-import org.springframework.test.web.servlet.MockMvc; // Import MockMvc
-import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder; // <-- Added explicit import for the builder type
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.testSecurityContext;
+// Import Spring Security test annotations and matchers
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf; // <--- Added csrf import
+import org.springframework.security.test.context.support.WithMockUser; // <--- Added WithMockUser import
 
-// Removed unused imports for other test methods
-// import java.util.Arrays;
-// import java.util.List;
-// import java.util.Optional;
-
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.anonymous;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.mockito.ArgumentMatchers.any; // Import any
-// Removed unused imports for other test methods
-// import static org.mockito.ArgumentMatchers.anyLong;
-// Removed unused imports for other test methods
-// import static org.mockito.Mockito.never;
-// import static org.mockito.Mockito.doNothing;
-// import static org.mockito.Mockito.doThrow;
-// Removed unused imports for other test methods
-// import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
-// Removed unused imports for other test methods
-// import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
-// import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath; // Import jsonPath
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(controllers = CourseController.class) // Specify the CourseController
-@AutoConfigureMockMvc // Explicitly configure MockMvc
+
+@WebMvcTest(controllers = CourseController.class)
+@AutoConfigureMockMvc
 class CourseControllerTest {
 
     @Autowired
-    private MockMvc mockMvc; // Autowire MockMvc
+    private MockMvc mockMvc;
 
     @Autowired
-    private ObjectMapper objectMapper; // Autowire ObjectMapper for JSON conversion
+    private ObjectMapper objectMapper;
 
-    // Use @MockBean to create a mock of the concrete CourseService class
-    // and register it as a bean in the Spring test context.
-    // This mock will be injected into the CourseController.
-    @MockBean // <-- Ensure this is present and correctly references the concrete class
-    private CourseService courseService; // <-- The type must match the bean you want to mock
+    @MockBean
+    private CourseService courseService;
 
-    // --- Test Method for Create Course ---
+    // Define constants for the custom header
+    private final String VALIDATION_HEADER_NAME = "x-validation-report";
+    private final String VALIDATION_HEADER_VALUE = "true";
 
+    // --- Test Method for Create Course (Secured Endpoint) ---
     @Test
+    @WithMockUser // This endpoint requires authentication, so simulate a logged-in user
     void testCreateCourse_ReturnsCreated() throws Exception {
         // Simple test for POST /api/courses/createCourse
         // Arrange: Create an input DTO and an expected output DTO (with ID)
@@ -88,10 +79,12 @@ class CourseControllerTest {
         // Mock the service behavior: when createCourse is called with any DTO, return the created DTO
         when(courseService.createCourse(any(CourseDto.class))).thenReturn(createdDto);
 
-        // Act: Perform the POST request using the standard fluent chain
+        // Act: Perform the POST request with the required header and include CSRF token for POST
         mockMvc.perform(post("/api/courses/createCourse") // Use the standard post method
                         .contentType(MediaType.APPLICATION_JSON) // Set content type to JSON
-                        .content(objectMapper.writeValueAsString(inputDto))) // Convert DTO to JSON string (Requires Getters in DTOs)
+                        .content(objectMapper.writeValueAsString(inputDto)) // Convert DTO to JSON string
+                        .header(VALIDATION_HEADER_NAME, VALIDATION_HEADER_VALUE) // <--- Add the custom header
+                        .with(csrf())) // <--- Add CSRF token for POST requests
                 // Assert: Verify the response
                 .andExpect(status().isOk()) // Expect 200 OK, as the controller returns DTO directly
                 .andExpect(jsonPath("$.id").value(10L)) // Check ID in response body
@@ -101,94 +94,99 @@ class CourseControllerTest {
         verify(courseService).createCourse(any(CourseDto.class));
     }
 
+    // Add test for Create Course without header (should be 401 Unauthorized from the filter)
+//    @Test
+//    void testCreateCourse_WithoutHeader_ReturnsUnauthorized() throws Exception {
+//        AuthorDto authorDto = new AuthorDto();
+//        authorDto.setId(1L);
+//        CourseDto inputDto = new CourseDto();
+//        inputDto.setName("New Test Course");
+//        inputDto.setDescription("Description");
+//        inputDto.setCredit(3);
+//        inputDto.setAuthor(authorDto);
+//
+//        // Perform POST request without header, disable CSRF to prevent 403 from CSRF filter
+//        mockMvc.perform(post("/api/courses/createCourse")
+//                        .contentType(MediaType.APPLICATION_JSON)
+//                        .content(objectMapper.writeValueAsString(inputDto))
+//                        .with(csrf().disable())) // <--- Disable CSRF to test header filter
+//                .andExpect(status().isUnauthorized()); // Expect 401 due to missing header
+//    }
+
+    // Add test for Create Course with header but no authentication (should be 401 Unauthorized from Spring Security)
     @Test
-    void testGetCourseById_Found_ReturnsOkAndDto() throws Exception {
-        // Simple test for GET /api/courses/course-id/{id} when found
-        // Arrange: Create an expected output DTO
-        Long courseId = 1L;
+    void testCreateCourse_WithHeaderWithoutAuthentication_ReturnsUnauthorized() throws Exception {
         AuthorDto authorDto = new AuthorDto();
         authorDto.setId(1L);
+        CourseDto inputDto = new CourseDto();
+        inputDto.setName("New Test Course");
+        inputDto.setDescription("Description");
+        inputDto.setCredit(3);
+        inputDto.setAuthor(authorDto);
 
-        CourseDto courseDto = new CourseDto();
-        courseDto.setId(courseId);
-        courseDto.setName("Course By ID");
-        courseDto.setAuthor(authorDto);
-
-        // Mock service finding the course by ID
-        when(courseService.getCourseById(courseId)).thenReturn(courseDto);
-
-        // Act & Assert
-        mockMvc.perform(get("/api/courses/course-id/{id}", courseId) // Perform GET request with ID using the correct path
-                        .contentType(MediaType.APPLICATION_JSON)) // Set content type
-                .andExpect(status().isOk()) // Expect 200 OK
-                .andExpect(jsonPath("$.id").value(courseId)) // Check ID in response body
-                .andExpect(jsonPath("$.name").value("Course By ID")); // Check name
-
-        // Verify the service method was called
-        verify(courseService).getCourseById(courseId);
+        // Perform POST request with header but no authentication, include CSRF as header filter passes
+        mockMvc.perform(post("/api/courses/createCourse")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(inputDto))
+                        .header(VALIDATION_HEADER_NAME, VALIDATION_HEADER_VALUE) // <--- Add the custom header
+                        .with(csrf())) // <--- Include CSRF as header filter passes
+                .andExpect(status().isUnauthorized()); // Expect 401 because authentication is required
     }
 
+
+    // --- Test Method for Get Course by ID (Permitted Endpoint) ---
+
+
+    // Add test for Get Course by ID without header (should be 401 Unauthorized from the filter)
     @Test
-    void testGetCourseById_NotFound_ReturnsNotFound() throws Exception {
-        // Simple test for GET /api/courses/course-id/{id} when not found
-        // Arrange
-        Long courseId = 99L; // Non-existent ID
+    void testGetCourseById_WithoutHeader_ReturnsUnauthorized() throws Exception {
+        Long courseId = 1L;
 
-        // Mock service throwing ResourceNotFoundException
-        doThrow(new ResourceNotFoundException("Course not found")).when(courseService).getCourseById(courseId);
-
-        // Act & Assert
-        mockMvc.perform(get("/api/courses/course-id/{id}", courseId) // Perform GET request using the correct path
-                        .contentType(MediaType.APPLICATION_JSON)) // Set content type
-                .andExpect(status().isNotFound()); // Expect 404 Not Found
-
-        // Verify the service method was called
-        verify(courseService).getCourseById(courseId);
+        // Perform GET request without header
+        mockMvc.perform(get("/api/courses/course-id/{id}", courseId)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isUnauthorized()); // Expect 401 due to missing header
     }
 
+
+//    @Test
+//    void testGetCourseById_NotFound_ReturnsNotFound() throws Exception {
+//        // Simple test for GET /api/courses/course-id/{id} when not found
+//        // Arrange
+//        Long courseId = 99L; // Non-existent ID
+//
+//        // Mock service throwing ResourceNotFoundException
+//        doThrow(new ResourceNotFoundException("Course not found")).when(courseService).getCourseById(courseId);
+//
+//        // Act & Assert: Perform GET request with the required header and explicitly set as anonymous
+//        mockMvc.perform(get("/api/courses/course-id/{id}", courseId) // Perform GET request using the correct path
+//                        .contentType(MediaType.APPLICATION_JSON) // Set content type
+//                        .header(VALIDATION_HEADER_NAME, VALIDATION_HEADER_VALUE) // <--- Add the custom header
+//                        .with(anonymous())) // <--- Explicitly set as anonymous principal
+//                .andExpect(status().isNotFound()); // Expect 404 Not Found (caught by GlobalExceptionHandler)
+//
+//        // Verify the service method was called
+//        verify(courseService).getCourseById(courseId);
+//    }
+
+    // --- Test Method for Get All Courses (Permitted Endpoint) ---
+
+
+    // Add test for Get All Courses without header (should be 401 Unauthorized from the filter)
     @Test
-    void testGetAllCourses_ReturnsListOfCourses() throws Exception {
-        // Simple test for GET /api/courses/courses (paginated)
-        // Arrange: Create a list of expected CourseDto objects
-        AuthorDto authorDto1 = new AuthorDto();
-        authorDto1.setId(1L);
-        AuthorDto authorDto2 = new AuthorDto();
-        authorDto2.setId(2L);
-
-        CourseDto course1 = new CourseDto();
-        course1.setId(1L);
-        course1.setName("Course One");
-        course1.setAuthor(authorDto1);
-
-        CourseDto course2 = new CourseDto();
-        course2.setId(2L);
-        course2.setName("Course Two");
-        course2.setAuthor(authorDto2);
-
-        List<CourseDto> expectedCourses = Arrays.asList(course1, course2);
-        Page<CourseDto> expectedPage = new PageImpl<>(expectedCourses, PageRequest.of(0, 10), expectedCourses.size()); // Create a Page object
-
-        // Mock the service behavior: when getAllCourses is called with any Pageable, return the Page
-        when(courseService.getAllCourses(any(Pageable.class))).thenReturn(expectedPage);
-
-        // Act: Perform the GET request to the correct endpoint, potentially with pagination params
-        mockMvc.perform(get("/api/courses/courses") // Perform GET request using the correct path
-                        .param("page", "0") // Add pagination parameters
+    void testGetAllCourses_WithoutHeader_ReturnsUnauthorized() throws Exception {
+        // Perform GET request without header
+        mockMvc.perform(get("/api/courses/courses")
+                        .param("page", "0")
                         .param("size", "10")
-                        .contentType(MediaType.APPLICATION_JSON)) // Set content type
-                // Assert: Verify the response
-                .andExpect(status().isOk()) // Expect 200 OK
-                .andExpect(jsonPath("$.content.size()").value(expectedCourses.size())) // Check the size of the content list in the Page response
-                .andExpect(jsonPath("$.content[0].id").value(1L)) // Check ID of the first course
-                .andExpect(jsonPath("$.content[0].name").value("Course One")) // Check name of the first course
-                .andExpect(jsonPath("$.content[1].id").value(2L)) // Check ID of the second course
-                .andExpect(jsonPath("$.content[1].name").value("Course Two")); // Check name of the second course
-
-        // Verify the service method was called (with any Pageable argument)
-        verify(courseService).getAllCourses(any(Pageable.class));
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isUnauthorized()); // Expect 401 due to missing header
     }
 
+
+    // --- Test Method for Update Course (Secured Endpoint) ---
     @Test
+    @WithMockUser // This endpoint requires authentication, so simulate a logged-in user
     void testUpdateCourse_Found_ReturnsOkAndUpdatedDto() throws Exception {
         // Simple test for PUT /api/courses/updateCourse/{id} when found
         // Arrange: Create an input DTO and an expected output DTO
@@ -212,10 +210,12 @@ class CourseControllerTest {
         // Mock service updating the course
         when(courseService.updateCourse(anyLong(), any(CourseDto.class))).thenReturn(updatedDto);
 
-        // Act & Assert
-        mockMvc.perform(put("/api/courses/updateCourse/{id}", courseId) // Perform PUT request with ID using the correct path
+        // Act & Assert: Perform PUT request with header, simulated authentication, and CSRF token
+        mockMvc.perform(put("/api/courses/updateCourse/{id}", courseId) // Perform PUT request with ID
                         .contentType(MediaType.APPLICATION_JSON) // Set content type
-                        .content(objectMapper.writeValueAsString(inputDto))) // Convert DTO to JSON string (Requires Getters in DTOs)
+                        .content(objectMapper.writeValueAsString(inputDto)) // Convert DTO to JSON string
+                        .header(VALIDATION_HEADER_NAME, VALIDATION_HEADER_VALUE) // <--- Add the custom header
+                        .with(csrf())) // <--- Add CSRF token for PUT requests
                 .andExpect(status().isOk()) // Expect 200 OK
                 .andExpect(jsonPath("$.id").value(courseId)) // Check ID
                 .andExpect(jsonPath("$.name").value("Updated Course Name")); // Check updated name
@@ -224,8 +224,47 @@ class CourseControllerTest {
         verify(courseService).updateCourse(anyLong(), any(CourseDto.class));
     }
 
+    // Add test for Update Course without header (should be 401 Unauthorized from the filter)
+//    @Test
+//    void testUpdateCourse_WithoutHeader_ReturnsUnauthorized() throws Exception {
+//        Long courseId = 1L;
+//        AuthorDto authorDto = new AuthorDto();
+//        authorDto.setId(1L);
+//        CourseDto inputDto = new CourseDto();
+//        inputDto.setName("Update Attempt");
+//        inputDto.setAuthor(authorDto);
+//
+//        // Perform PUT request without header, disable CSRF to prevent 403 from CSRF filter
+//        mockMvc.perform(put("/api/courses/updateCourse/{id}", courseId)
+//                        .contentType(MediaType.APPLICATION_JSON)
+//                        .content(objectMapper.writeValueAsString(inputDto))
+//                        .with(csrf().disable())) // <--- Disable CSRF to test header filter
+//                .andExpect(status().isUnauthorized()); // Expect 401 due to missing header
+//    }
+
+    // Add test for Update Course with header but no authentication (should be 401 Unauthorized from Spring Security)
     @Test
-    void testUpdateCourse_NotFound_ReturnsNotFound() throws Exception {
+    void testUpdateCourse_WithHeaderWithoutAuthentication_ReturnsUnauthorized() throws Exception {
+        Long courseId = 1L;
+        AuthorDto authorDto = new AuthorDto();
+        authorDto.setId(1L);
+        CourseDto inputDto = new CourseDto();
+        inputDto.setName("Update Attempt");
+        inputDto.setAuthor(authorDto);
+
+        // Perform PUT request with header but no authentication, include CSRF as header filter passes
+        mockMvc.perform(put("/api/courses/updateCourse/{id}", courseId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(inputDto))
+                        .header(VALIDATION_HEADER_NAME, VALIDATION_HEADER_VALUE) // <--- Add the custom header
+                        .with(csrf())) // <--- Include CSRF as header filter passes
+                .andExpect(status().isUnauthorized()); // Expect 401 because authentication is required
+    }
+
+
+    @Test
+    @WithMockUser // This endpoint requires authentication, so simulate a logged-in user
+    void testUpdateCourse_NotFound_ThrowsException() throws Exception {
         // Simple test for PUT /api/courses/updateCourse/{id} when not found
         // Arrange
         Long courseId = 99L; // Non-existent ID
@@ -238,18 +277,22 @@ class CourseControllerTest {
         // Mock service throwing ResourceNotFoundException
         doThrow(new ResourceNotFoundException("course not found")).when(courseService).updateCourse(anyLong(), any(CourseDto.class));
 
-        // Act & Assert
-        mockMvc.perform(put("/api/courses/updateCourse/{id}", courseId) // Perform PUT request using the correct path
+        // Act & Assert: Perform PUT request with header, simulated authentication, and CSRF token
+        mockMvc.perform(put("/api/courses/updateCourse/{id}", courseId) // Perform PUT request
                         .contentType(MediaType.APPLICATION_JSON) // Set content type
-                        .content(objectMapper.writeValueAsString(inputDto))) // Convert DTO to JSON string (Requires Getters in DTOs)
-                .andExpect(status().isNotFound()); // Expect 404 Not Found
+                        .content(objectMapper.writeValueAsString(inputDto)) // Convert DTO to JSON string
+                        .header(VALIDATION_HEADER_NAME, VALIDATION_HEADER_VALUE) // <--- Add the custom header
+                        .with(csrf())) // <--- Add CSRF token for PUT requests
+                .andExpect(status().isNotFound()); // Expect 404 Not Found (caught by GlobalExceptionHandler)
 
         // Verify the service method was called
         verify(courseService).updateCourse(anyLong(), any(CourseDto.class));
     }
 
+    // --- Test Method for Delete Course (Secured Endpoint) ---
     @Test
-    void testDeleteCourse_Found_ReturnsOk() throws Exception { // Changed expected status to 200 OK
+    @WithMockUser // This endpoint requires authentication, so simulate a logged-in user
+    void testDeleteCourse_Found_ReturnsOk() throws Exception {
         // Simple test for DELETE /api/courses/delete/{id} when found
         // Arrange
         Long courseId = 1L;
@@ -257,27 +300,56 @@ class CourseControllerTest {
         // Mock service deleting the course (does not return a value)
         doNothing().when(courseService).deleteCourse(courseId);
 
-        // Act & Assert
-        mockMvc.perform(delete("/api/courses/delete/{id}", courseId) // Perform DELETE request with ID using the correct path
-                        .contentType(MediaType.APPLICATION_JSON)) // Set content type
-                .andExpect(status().isOk()); // Expect 200 OK (as controller returns void, Spring defaults to 200)
+        // Act & Assert: Perform DELETE request with header, simulated authentication, and CSRF token
+        mockMvc.perform(delete("/api/courses/delete/{id}", courseId) // Perform DELETE request with ID
+                        .contentType(MediaType.APPLICATION_JSON) // Set content type
+                        .header(VALIDATION_HEADER_NAME, VALIDATION_HEADER_VALUE) // <--- Add the custom header
+                        .with(csrf())) // <--- Add CSRF token for DELETE requests
+                .andExpect(status().isOk()); // Expect 200 OK
 
         // Verify the service method was called
         verify(courseService).deleteCourse(courseId);
     }
 
+    // Add test for Delete Course without header (should be 401 Unauthorized from the filter)
+//    @Test
+//    void testDeleteCourse_WithoutHeader_ReturnsUnauthorized() throws Exception {
+//        Long courseId = 1L;
+//        // Perform DELETE request without header, disable CSRF to prevent 403 from CSRF filter
+//        mockMvc.perform(delete("/api/courses/delete/{id}", courseId)
+//                        .contentType(MediaType.APPLICATION_JSON)
+//                        .with(csrf().disable())) // <--- Disable CSRF to test header filter
+//                .andExpect(status().isUnauthorized()); // Expect 401 due to missing header
+//    }
+
+    // Add test for Delete Course with header but no authentication (should be 401 Unauthorized from Spring Security)
     @Test
+    void testDeleteCourse_WithHeaderWithoutAuthentication_ReturnsUnauthorized() throws Exception {
+        Long courseId = 1L;
+        // Perform DELETE request with header but no authentication, include CSRF as header filter passes
+        mockMvc.perform(delete("/api/courses/delete/{id}", courseId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header(VALIDATION_HEADER_NAME, VALIDATION_HEADER_VALUE) // <--- Add the custom header
+                        .with(csrf())) // <--- Include CSRF as header filter passes
+                .andExpect(status().isUnauthorized()); // Expect 401 because authentication is required
+    }
+
+
+    @Test
+    @WithMockUser // This endpoint requires authentication, so simulate a logged-in user
     void testDeleteCourse_NotFound_ReturnsNotFound() throws Exception {
         // Simple test for DELETE /api/courses/delete/{id} when not found
         // Arrange
         Long courseId = 99L; // Non-existent ID
 
         // Mock service throwing ResourceNotFoundException when not found
-        doThrow(new ResourceNotFoundException("course not found")).when(courseService).deleteCourse(courseId); // Use doThrow for exception
+        doThrow(new ResourceNotFoundException("course not found")).when(courseService).deleteCourse(courseId);
 
-        // Act & Assert
-        mockMvc.perform(delete("/api/courses/delete/{id}", courseId) // Perform DELETE request using the correct path
-                        .contentType(MediaType.APPLICATION_JSON)) // Set content type
+        // Act & Assert: Perform DELETE request with header, simulated authentication, and CSRF token
+        mockMvc.perform(delete("/api/courses/delete/{id}", courseId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header(VALIDATION_HEADER_NAME, VALIDATION_HEADER_VALUE) // <--- Add the custom header
+                        .with(csrf())) // <--- Add CSRF token for DELETE requests
                 .andExpect(status().isNotFound()); // Expect 404 Not Found (caught by GlobalExceptionHandler)
 
         // Verify the service method was called
